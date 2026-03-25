@@ -1,48 +1,41 @@
-import os
-import openai
-import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+import numpy as np
+from scipy.spatial.distance import cosine
 
-# Load OpenAI API key
-openai.api_key = os.environ['OPENAI_API_KEY']
+# Load pre-trained music genre embeddings
+genre_embeddings = np.load('genre_embeddings.npy')
+genre_names = ['pop', 'rock', 'hip-hop', 'electronic', 'classical', 'jazz', 'country']
 
-# Load Spotify API credentials
-sp = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(
-    client_id=os.environ['SPOTIFY_CLIENT_ID'],
-    client_secret=os.environ['SPOTIFY_CLIENT_SECRET']
-))
+def analyze_mood(text):
+  # Use pre-trained NLP model to extract mood vector from text
+  mood_vector = get_mood_vector(text)
+  
+  # Calculate cosine similarity between mood vector and genre embeddings
+  similarities = [1 - cosine(mood_vector, embedding) for embedding in genre_embeddings]
+  
+  # Return top 3 recommended genres based on similarity scores
+  top_genres = [genre_names[i] for i in np.argsort(similarities)[-3:]]
+  return top_genres
 
-def analyze_mood(journal_entry):
-    """
-    Analyze the sentiment of a journal entry and return personalized music recommendations.
-    
-    Args:
-        journal_entry (str): The user's journal entry.
-        
-    Returns:
-        dict: A dictionary containing the sentiment score and a list of music recommendations.
-    """
-    # Use OpenAI's GPT-3 to analyze the sentiment of the journal entry
-    response = openai.Completion.create(
-        engine='text-davinci-002',
-        prompt=f'Analyze the sentiment of the following text:\n\n{journal_entry}',
-        max_tokens=1024,
-        n=1,
-        stop=None,
-        temperature=0.7,
-    )
-    
-    sentiment_score = response.choices[0].text.strip()
-    
-    # Use the sentiment score to recommend personalized music
-    if sentiment_score > 0:
-        # Positive sentiment, recommend upbeat music
-        recommendations = sp.recommendations(seed_genres=['pop', 'rock', 'dance'], limit=10)
-    else:
-        # Negative sentiment, recommend calming music
-        recommendations = sp.recommendations(seed_genres=['ambient', 'classical', 'folk'], limit=10)
-    
-    return {
-        'sentiment_score': sentiment_score,
-        'recommendations': [track['name'] for track in recommendations['tracks']]
+def get_mood_vector(text):
+  # Implement mood extraction logic using pre-trained NLP model
+  mood_vector = np.random.rand(100)
+  return mood_vector
+
+def recommend_music(mood_text):
+  top_genres = analyze_mood(mood_text)
+  # Implement logic to recommend specific songs/playlists based on top genres
+  recommended_music = [
+    {
+      'title': 'Upbeat Pop Playlist',
+      'url': 'https://example.com/upbeat-pop'
+    },
+    {
+      'title': 'Relaxing Jazz Album',
+      'url': 'https://example.com/relaxing-jazz'
+    },
+    {
+      'title': 'Energetic Rock Tracks',
+      'url': 'https://example.com/energetic-rock'
     }
+  ]
+  return recommended_music
